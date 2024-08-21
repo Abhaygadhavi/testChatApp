@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "827255126548",
+    "project_id": "super-chat-95836",
+    "storage_bucket": "super-chat-95836.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:827255126548:android:5afc930ff1d63308284501",
+        "android_client_info": {
+          "package_name": "com.AbhayGadhvi.chat_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWBWdNFlzvhDSL92M9333cF_qZV2l9iQY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
