@@ -8,6 +8,8 @@ import 'package:chat_app/screens/chat_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:chat_app/components/theme_provider.dart';
+import 'package:chat_app/services/auth/auth_provider.dart';
+import 'services/auth/auth_gate.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,16 +27,20 @@ void main() async {
 class FlashChat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return MaterialApp(
             themeMode: themeProvider.themeMode,
             theme: ThemeData.light(),
             darkTheme: ThemeData.dark(),
-            initialRoute: WelcomeScreen.id,
+            initialRoute: AuthGate.id,
             routes: {
+              AuthGate.id: (context) => AuthGate(),
               WelcomeScreen.id: (context) => WelcomeScreen(),
               LoginScreen.id: (context) => LoginScreen(),
               RegistrationScreen.id: (context) => RegistrationScreen(),
