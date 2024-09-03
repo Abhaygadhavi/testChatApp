@@ -22,6 +22,8 @@ class AuthProvider with ChangeNotifier {
         'uid': userCredential.user?.uid,
         'name': name,
         'email': email,
+        'friends': [],
+        'friendRequests': [],
       });
       return true;
     } on FirebaseAuthException catch (e) {

@@ -16,6 +16,70 @@ class DashboardScreen extends StatelessWidget {
   DashboardScreen({super.key});
   final ChatService _chatService = ChatService();
 
+  //show options
+  void _showOptions(BuildContext context, String userId, String userName) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              //block user button
+              ListTile(
+                leading: const Icon(Icons.block),
+                title: const Text("Block"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _blockUser(context, userId, userName);
+                },
+              ),
+
+              //cancel button
+              ListTile(
+                leading: const Icon(Icons.cancel),
+                title: const Text("Cancel"),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  //block user
+  void _blockUser(BuildContext context, String userId, String userName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Block User"),
+        content: Text("Are you sure you want to block this user?"),
+        actions: [
+          //cancel button
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancel"),
+          ),
+          //report button
+          TextButton(
+            onPressed: () {
+              //perform block
+              ChatService().blockUser(userId);
+              //dismiss dialog
+              Navigator.pop(context);
+              //let user know about the result
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(userName + " Blocked")));
+            },
+            child: Text("Block"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<auth.AuthProvider>(context);
@@ -63,6 +127,8 @@ class DashboardScreen extends StatelessWidget {
     //display all user except current user
     if (userData["email"] != user?.email) {
       return UserTile(
+        onLongPress: () =>
+            _showOptions(context, userData["uid"], userData["name"]),
         text: userData["name"],
         onTap: () {
           Navigator.push(

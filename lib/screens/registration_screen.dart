@@ -2,6 +2,7 @@ import 'package:chat_app/components/rounded_button.dart';
 import 'package:chat_app/constants.dart';
 import 'package:chat_app/screens/dashboard_screen.dart';
 import 'package:chat_app/screens/login_screen.dart';
+import 'package:chat_app/screens/users_and_friends_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -47,7 +48,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       if (success) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => DashboardScreen()),
+          MaterialPageRoute(builder: (context) => UsersAndFriendsScreen()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

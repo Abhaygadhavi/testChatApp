@@ -1,5 +1,6 @@
 import 'package:chat_app/screens/dashboard_screen.dart';
 import 'package:chat_app/screens/registration_screen.dart';
+import 'package:chat_app/screens/users_and_friends_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -42,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (success) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => DashboardScreen()),
+          MaterialPageRoute(builder: (context) => UsersAndFriendsScreen()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -57,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<auth.AuthProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
+      appBar: AppBar(centerTitle: true, title: Text('Login')),
       body: Center(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.0),

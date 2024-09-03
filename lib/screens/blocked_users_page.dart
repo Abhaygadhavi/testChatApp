@@ -11,7 +11,7 @@ class BlockedUsersPage extends StatelessWidget {
   final AuthProvider authProvider = AuthProvider();
 
   //show confirm unblock box
-  void _showUnblockBox(BuildContext context, String userId) {
+  void _showUnblockBox(BuildContext context, String userId, String userName) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -29,8 +29,8 @@ class BlockedUsersPage extends StatelessWidget {
             onPressed: () {
               ChatService().unblockUser(userId);
               Navigator.pop(context);
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text("User Unblocked")));
+              ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(userName + " Unblocked")));
             },
             child: Text("Unblock"),
           ),
@@ -85,7 +85,8 @@ class BlockedUsersPage extends StatelessWidget {
               final user = blockedUsers[index];
               return UserTile(
                 text: user["name"],
-                onTap: () => _showUnblockBox(context, user['uid']),
+                onTap: () =>
+                    _showUnblockBox(context, user['uid'], user["name"]),
               );
             },
           );

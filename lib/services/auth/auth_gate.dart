@@ -1,5 +1,6 @@
 import 'package:chat_app/screens/dashboard_screen.dart';
 import 'package:chat_app/screens/login_screen.dart';
+import 'package:chat_app/screens/users_and_friends_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -14,7 +15,7 @@ class AuthGate extends StatelessWidget {
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
-              return DashboardScreen();
+              return UsersAndFriendsScreen();
             } else {
               return LoginScreen();
             }

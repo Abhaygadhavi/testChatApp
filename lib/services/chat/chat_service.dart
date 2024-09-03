@@ -34,8 +34,33 @@ class ChatService extends ChangeNotifier {
 
       //get all users
       final usersSnapshot = await _firestore.collection('Users').get();
+      // Get list of friends' ids of the current user
+      final friendsSnapshot = await _firestore
+          .collection('Users')
+          .doc(currentUser.uid)
+          .collection("friends")
+          .get();
+
+      final friendsUserIds = usersSnapshot.docs
+          .where((doc) => doc.data()['uid'] == currentUser!.uid)
+          .map((doc) => doc.data()['friends'])
+          .toList();
+      print("currentUser friends");
+      print(usersSnapshot.docs
+          .where((doc) => doc.data()['uid'] == currentUser!.uid)
+          .map((doc) => doc.data()['friends'])
+          .toList());
+      print(friendsUserIds);
 
       //return as stream list,excluding current user and blocked users
+      // return usersSnapshot.docs
+      //     .where((doc) =>
+      //         doc.data()['email'] != currentUser.email &&
+      //         !blockedUserIds.contains(doc.id) && // Exclude blocked users
+      //         friendsUserIds.contains(doc.id)) // Include only friends
+      //     .map((doc) => doc.data())
+      //     .toList();
+
       return usersSnapshot.docs
           .where((doc) =>
               doc.data()['email'] != currentUser.email &&
@@ -110,6 +135,12 @@ class ChatService extends ChangeNotifier {
         .collection("BlockedUsers")
         .doc(userID)
         .set({});
+    await FirebaseFirestore.instance
+        .collection('Users')
+        .doc(currentUser.uid)
+        .update({
+      'friends': FieldValue.arrayRemove([userID])
+    });
     notifyListeners();
   }
 
@@ -122,6 +153,12 @@ class ChatService extends ChangeNotifier {
         .collection("BlockedUsers")
         .doc(blockedUserID)
         .delete();
+    await FirebaseFirestore.instance
+        .collection('Users')
+        .doc(currentUser.uid)
+        .update({
+      'friends': FieldValue.arrayUnion([blockedUserID])
+    });
   }
 
   //get blocked users stream
