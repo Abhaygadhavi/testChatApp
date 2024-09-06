@@ -1,4 +1,4 @@
-import 'package:chat_app/screens/login_screen.dart';
+import 'package:chat_app/screens/users_and_friends_screen.dart';
 import 'package:chat_app/services/auth/auth_gate.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -29,8 +29,14 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
     });
   }
 
-  Future<void> _updateNameAndPassword() async {
-    if (!_formKey.currentState!.validate()) return;
+  // Separate function to update the user's name
+  Future<void> _updateName() async {
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Name cannot be empty.')),
+      );
+      return;
+    }
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -40,43 +46,17 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
       return;
     }
 
-    final credential = EmailAuthProvider.credential(
-      email: user.email!,
-      password: _currentPasswordController.text,
-    );
-
     try {
       _toggleLoading(true);
 
-      // Reauthenticate the user with the current credentials
-      await user.reauthenticateWithCredential(credential);
-
-      // Update the display name if the name is not empty
-      if (_nameController.text.isNotEmpty) {
-        await user.updateDisplayName(_nameController.text);
-      }
-
-      // Update the password if the password field is not empty
-      if (_passwordController.text.isNotEmpty) {
-        await user.updatePassword(_passwordController.text);
-      }
-
+      // Update the display name
+      await user.updateDisplayName(_nameController.text);
       await user.reload(); // Refresh user info
+
       _toggleLoading(false);
 
-      // Log out the user after updates
-      await FirebaseAuth.instance.signOut();
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Profile updated. Please log in again.')),
-      );
-
-      // Redirect to login or main screen
-      // Redirect to the login screen and remove all previous routes
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => AuthGate()),
-        (Route<dynamic> route) => false, // Removes all routes
+        SnackBar(content: Text('Name updated successfully.')),
       );
     } on FirebaseAuthException catch (e) {
       _toggleLoading(false);
@@ -87,6 +67,98 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
         SnackBar(content: Text('An unexpected error occurred.')),
       );
     }
+  }
+
+  // Separate function to update the user's password
+  Future<void> _updatePassword() async {
+    if (_passwordController.text.isEmpty ||
+        _passwordController.text.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Password must be at least 6 characters long.')),
+      );
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No user is logged in.')),
+      );
+      return;
+    }
+
+    try {
+      _toggleLoading(true);
+
+      // Reauthenticate the user with the current credentials
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: _currentPasswordController.text,
+      );
+
+      await user.reauthenticateWithCredential(credential);
+
+      // Update the password
+      await user.updatePassword(_passwordController.text);
+      await user.reload(); // Refresh user info
+
+      _toggleLoading(false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Password updated successfully.')),
+      );
+
+      // Log out the user after updates
+      await FirebaseAuth.instance.signOut();
+
+      // Redirect to the login screen and remove all previous routes
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => AuthGate()),
+        (Route<dynamic> route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      _toggleLoading(false);
+      _handleFirebaseAuthException(e);
+    } catch (e) {
+      _toggleLoading(false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An unexpected error occurred.')),
+      );
+    }
+  }
+
+  // Function to show warning dialog before updating password
+  Future<void> _showPasswordUpdateWarning() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Warning'),
+          content: Text(
+              'Are you sure you want to update the password? This action will log you out.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Clear the text fields and dismiss the dialog
+                _currentPasswordController.clear();
+                _passwordController.clear();
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Proceed with updating the password
+                Navigator.of(context).pop();
+                _updatePassword();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _handleFirebaseAuthException(FirebaseAuthException e) {
@@ -109,7 +181,8 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Update Profile'),
+        title: Text(
+            'Update Profile for ${FirebaseAuth.instance.currentUser!.displayName}'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -121,6 +194,13 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                 TextFormField(
                   controller: _nameController,
                   decoration: InputDecoration(labelText: 'New Name'),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _updateName,
+                  child: _isLoading
+                      ? CircularProgressIndicator()
+                      : Text('Update Name'),
                 ),
                 TextFormField(
                   controller: _currentPasswordController,
@@ -147,10 +227,12 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                     return null;
                   },
                 ),
+                SizedBox(height: 10),
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _updateNameAndPassword,
-                  child:
-                      _isLoading ? CircularProgressIndicator() : Text('Update'),
+                  onPressed: _isLoading ? null : _showPasswordUpdateWarning,
+                  child: _isLoading
+                      ? CircularProgressIndicator()
+                      : Text('Update Password'),
                 ),
               ],
             ),

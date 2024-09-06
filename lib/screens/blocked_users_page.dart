@@ -71,7 +71,8 @@ class BlockedUsersPage extends StatelessWidget {
           }
 
           final blockedUsers = snapshot.data ?? [];
-
+          print("blockedusers");
+          print(blockedUsers);
           //no users
           if (blockedUsers.isEmpty) {
             return const Center(

@@ -27,7 +27,7 @@ class _UsersAndFriendsScreenState extends State<UsersAndFriendsScreen> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         centerTitle: true,
-        title: Text('Welcome ${currentUser?.displayName ?? 'User'}'),
+        title: Text('Users and Friends'),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.grey,
         elevation: 0,
@@ -85,31 +85,86 @@ class _UsersAndFriendsScreenState extends State<UsersAndFriendsScreen> {
         if (!snapshot1.hasData) return CircularProgressIndicator();
 
         var users = snapshot1.data!.docs;
-        return ListView.builder(
-          itemCount: users.length,
-          itemBuilder: (context, index) {
-            var user = users[index];
-            var userId = user.id;
-            var userName = user['name'];
 
-            if (userId == currentUser!.uid || friends.contains(userId)) {
-              return Container(); // Skip current user and already friends
-            }
+        // Stream blocked users directly from Firestore
+        return StreamBuilder(
+          stream: FirebaseFirestore.instance
+              .collection('Users')
+              .doc(currentUser!.uid)
+              .collection("BlockedUsers")
+              .snapshots(),
+          builder: (context, snapshot2) {
+            if (!snapshot2.hasData) return CircularProgressIndicator();
 
-            bool requestSent = friendRequests.contains(userId) ||
-                localSentRequests.contains(userId);
+            // Extract blocked users ids from the snapshot, defaulting to an empty list if not present
+            var blockedUsers =
+                snapshot2.data!.docs.map((doc) => doc.id).toList();
 
-            return ListTile(
-              title: Text(userName),
-              trailing: ElevatedButton(
-                onPressed: requestSent ? null : () => sendFriendRequest(userId),
-                child: Text(requestSent ? "Pending" : "Send Request"),
-              ),
+            return ListView.builder(
+              itemCount: users.length,
+              itemBuilder: (context, index) {
+                var user = users[index];
+                var userId = user.id;
+                var userName = user['name'];
+                if (userId == currentUser!.uid ||
+                    friends.contains(userId) ||
+                    blockedUsers!.contains(userId)) {
+                  return Container(); // Skip current user,already friends and blocked users
+                }
+
+                //if the other user have sent the logged in user friend request
+                if (friendRequests.contains(userId)) {
+                  return ListTile(
+                    title: Text(userName),
+                    trailing: ElevatedButton(
+                      onPressed: () {
+                        acceptFriendRequest(currentUser!.uid, userId);
+                      },
+                      child: Text('Accept'),
+                    ),
+                  );
+                }
+                bool requestSent = localSentRequests.contains(userId);
+
+                return ListTile(
+                  title: Text(userName),
+                  trailing: ElevatedButton(
+                    onPressed:
+                        requestSent ? null : () => sendFriendRequest(userId),
+                    child: Text(requestSent ? "Pending" : "Send Request"),
+                  ),
+                );
+              },
             );
           },
         );
       },
     );
+  }
+
+  void acceptFriendRequest(String currentUserId, String requesterId) async {
+    print(currentUserId);
+    print(requesterId);
+    await FirebaseFirestore.instance
+        .collection('Users')
+        .doc(currentUserId)
+        .update({
+      'friends': FieldValue.arrayUnion([requesterId])
+    });
+
+    await FirebaseFirestore.instance
+        .collection('Users')
+        .doc(requesterId)
+        .update({
+      'friends': FieldValue.arrayUnion([currentUserId])
+    });
+
+    await FirebaseFirestore.instance
+        .collection('Users')
+        .doc(currentUserId)
+        .update({
+      'friendRequests': FieldValue.arrayRemove([requesterId])
+    });
   }
 
   void sendFriendRequest(String targetUserId) async {
